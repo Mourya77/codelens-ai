@@ -2,6 +2,15 @@
 
 Production-grade Agentic RAG GitHub Repository & Code Documentation Analyzer.
 
+**Live deployment:** https://codelens-ai-ermv.onrender.com
+(Render free tier, deployed from this repo via `render.yaml` Blueprint —
+FastAPI backend + built frontend on one service, managed Postgres.
+Set `GEMINI_API_KEY` in the Render dashboard to enable the real Gemini
+backend; without it the app runs in offline mock mode. The free
+Postgres expires 30 days after creation — see `render.yaml` notes for
+the Neon alternative. The database schema is created on startup by the
+FastAPI lifespan handler, so a fresh database needs no migrations.)
+
 Built phase-by-phase as a unified monorepo:
 
 - **Backend:** Python + FastAPI (this phase)
