@@ -1,0 +1,24 @@
+# Local development Postgres for CodeLens AI.
+# Uses the pgvector image so the vector extension is *available* if you
+# want it later — Phase 1 does not require it (embeddings live in JSONB
+# and keyword search uses a native TSVECTOR column), so this also works
+# unchanged against any managed PostgreSQL.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: codelens
+    ports:
+      - "5432:5432"
+    volumes:
+      - codelens_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d codelens"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  codelens_pgdata:

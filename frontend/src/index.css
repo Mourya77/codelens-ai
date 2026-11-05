@@ -1,0 +1,110 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-ink-950 text-slate-200 font-sans antialiased;
+}
+
+/* Slim dark scrollbars, VS Code style */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2b3648 transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2b3648;
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+.agent-working-dot {
+  animation: pulse-dot 1.1s ease-in-out infinite;
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.drawer-enter {
+  animation: slide-in-right 0.18s ease-out;
+}
+
+/* Markdown answer typography */
+.md-body {
+  @apply text-[15px] leading-relaxed text-slate-300;
+}
+.md-body h1,
+.md-body h2,
+.md-body h3,
+.md-body h4 {
+  @apply font-semibold text-slate-100 mt-5 mb-2;
+}
+.md-body h1 {
+  @apply text-xl;
+}
+.md-body h2 {
+  @apply text-lg;
+}
+.md-body h3 {
+  @apply text-base;
+}
+.md-body p {
+  @apply my-2.5;
+}
+.md-body ul {
+  @apply list-disc pl-5 my-2.5 space-y-1;
+}
+.md-body ol {
+  @apply list-decimal pl-5 my-2.5 space-y-1;
+}
+.md-body code {
+  @apply font-mono text-[0.85em] bg-ink-700/70 text-lens-soft px-1.5 py-0.5 rounded;
+}
+.md-body pre {
+  @apply bg-ink-900 border border-ink-700 rounded-lg p-3.5 my-3 overflow-x-auto;
+}
+.md-body pre code {
+  @apply bg-transparent p-0 text-slate-200;
+}
+.md-body strong {
+  @apply text-slate-100 font-semibold;
+}
+.md-body table {
+  @apply border-collapse my-3 text-sm;
+}
+.md-body th,
+.md-body td {
+  @apply border border-ink-600 px-2.5 py-1.5;
+}
+.md-body blockquote {
+  @apply border-l-2 border-lens/50 pl-3.5 text-slate-400 my-3;
+}
