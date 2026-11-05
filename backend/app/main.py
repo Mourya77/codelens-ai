@@ -14,9 +14,12 @@ Run from the repo root:
 
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 import uuid
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,11 +30,45 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .agent import CodebaseAgent, LLMBackend, make_llm_backend
 from .config import settings
-from .db import get_db
+from .db import get_db, init_db
 from .github_client import GitHubClient
 from .indexer import EmbeddingService, index_repository
 from .models import CodeChunk, Repository
 from .retriever import HybridCodeRetriever
+
+logger = logging.getLogger("codelens.main")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Create the database schema on startup.
+
+    A fresh managed Postgres (e.g. a new Render database) starts with no
+    tables at all; without this, every DB-backed endpoint 500s while
+    /api/health stays green. init_db() is idempotent (create_all), so it
+    is safe on every boot. Failures are retried briefly (database still
+    provisioning) and then logged loudly without taking the app down —
+    DB endpoints will report errors until the database is reachable and
+    the service is restarted.
+    """
+    for attempt in range(1, 4):
+        try:
+            await asyncio.wait_for(init_db(), timeout=15)
+            logger.info("Database schema ready (attempt %d)", attempt)
+            break
+        except Exception:
+            if attempt == 3:
+                logger.exception(
+                    "init_db failed after 3 attempts; DB-backed endpoints "
+                    "will fail until the database is reachable"
+                )
+            else:
+                logger.warning(
+                    "init_db attempt %d failed; retrying", attempt, exc_info=True
+                )
+                await asyncio.sleep(2)
+    yield
+
 
 app = FastAPI(
     title="CodeLens AI",
@@ -42,6 +79,7 @@ app = FastAPI(
         "Phase 4: serves the built React frontend from the same origin."
     ),
     version="0.4.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
