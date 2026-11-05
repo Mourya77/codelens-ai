@@ -81,7 +81,7 @@ cd frontend && npm install && npm run build   # tsc + vite build
   `[file_path:start_line-end_line]` (a References block is appended if
   a model answer ever omits citations). The LLM sits behind an
   `LLMBackend` protocol: `GeminiLLM` (Gemini REST, model configurable
-  via `GEMINI_MODEL`, default `gemini-3.5-flash`) or a deterministic
+  via `GEMINI_MODEL`, default `gemini-3.1-flash-lite`) or a deterministic
   `HeuristicLLM` offline backend for `GEMINI_API_KEY=mock`/empty.
 - Endpoint: `POST /api/repos/{repo_id}/query` with
   `{"question", "chat_history"}` returns `{answer, agent_trace,

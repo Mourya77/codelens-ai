@@ -75,7 +75,13 @@ class Settings(BaseSettings):
     # closed to new API projects (404) and the "gemini-flash-latest"
     # alias returned persistent 503 high-demand errors, while
     # gemini-3.5-flash answered reliably. Override via GEMINI_MODEL.
-    gemini_model: str = "gemini-3.5-flash"
+    # (Updated again the same day: the free-tier daily quota for
+    # gemini-3.5-flash / 3.6-flash was exhausted by live traffic —
+    # 429s on the grader call — while gemini-3.1-flash-lite, also
+    # live-verified for generation and JSON mode, still had quota.
+    # Default therefore pins the lite model; set GEMINI_MODEL to a
+    # full Flash model when the project has billing / higher quota.)
+    gemini_model: str = "gemini-3.1-flash-lite"
     # Embedding model. text-embedding-004 is likewise closed to new
     # projects; gemini-embedding-001 is requested at 768 dimensions
     # (outputDimensionality) to match the local fallback's shape.

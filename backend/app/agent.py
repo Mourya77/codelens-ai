@@ -15,7 +15,7 @@ an explicit state machine:
 
 The LLM work is behind the ``LLMBackend`` protocol:
 
-* ``GeminiLLM`` — Gemini (``gemini-3.5-flash`` by default) over REST.
+* ``GeminiLLM`` — Gemini (``gemini-3.1-flash-lite`` by default) over REST.
 * ``HeuristicLLM`` — a deterministic offline backend used when the API
   key is ``"mock"``/empty: identifier extraction for analysis, a
   referenced-but-undefined-symbol check for grading, and an extractive
@@ -25,6 +25,7 @@ The LLM work is behind the ``LLMBackend`` protocol:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 from dataclasses import dataclass, field
@@ -36,7 +37,7 @@ from .config import env_proxy_url, settings
 from .retriever import HybridCodeRetriever, RetrievedChunk, query_identifiers
 
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
-DEFAULT_MODEL = "gemini-3.5-flash"
+DEFAULT_MODEL = "gemini-3.1-flash-lite"
 INITIAL_TOP_K = 6
 MAX_HOPS = 2
 
@@ -215,11 +216,35 @@ class GeminiLLM:
             else:
                 client = httpx.AsyncClient(**kwargs)
             owns = True
+        # Retry transient failures (429 quota spikes, 5xx, transport
+        # errors) with backoff: a single agent answer makes several
+        # sequential LLM calls, so one momentary 429 used to fail the
+        # whole request with a 500. Non-transient 4xx raise at once.
+        retryable = {429, 500, 502, 503}
         try:
-            resp = await client.post(url, json=body, headers=headers)
+            resp: httpx.Response | None = None
+            for attempt in range(3):
+                try:
+                    resp = await client.post(url, json=body, headers=headers)
+                except httpx.TransportError:
+                    if attempt == 2:
+                        raise
+                    await asyncio.sleep(2.0 * (attempt + 1))
+                    continue
+                if resp.status_code not in retryable or attempt == 2:
+                    break
+                delay = 2.0 * (attempt + 1)
+                retry_after = resp.headers.get("retry-after")
+                if retry_after:
+                    try:
+                        delay = min(float(retry_after), 20.0)
+                    except ValueError:
+                        pass
+                await asyncio.sleep(delay)
         finally:
             if owns:
                 await client.aclose()
+        assert resp is not None
         if resp.status_code >= 400:
             raise RuntimeError(
                 f"Gemini API {resp.status_code}: {resp.text[:300]}"
